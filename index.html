@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Traduttore</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #fafafa;
+    --surface: #f4f1fb;
+    --border: #cfc0f0;
+    --border-active: #7c3aed;
+    --accent: #5b21b6;
+    --accent-light: #7c3aed;
+    --accent-dim: rgba(91,33,182,0.06);
+    --accent-glow: rgba(91,33,182,0.12);
+    --text: #12062a;
+    --text-dim: #7a6e90;
+    --text-mid: #4a3f6b;
+    --error: #dc2626;
+    --success: #059669;
+    --serif: 'Playfair Display', Georgia, serif;
+    --sans: 'Inter', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* ── EMOJI BACKGROUND ── */
+  .emoji-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .emoji-float {
+    position: absolute;
+    opacity: 0.07;
+    animation: floatAround linear infinite;
+    user-select: none;
+    line-height: 1;
+  }
+
+  @keyframes floatAround {
+    0%   { transform: translateY(0px) rotate(0deg); }
+    33%  { transform: translateY(-16px) rotate(5deg); }
+    66%  { transform: translateY(-8px) rotate(-4deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+  }
+
+  /* ── CONTAINER ── */
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 720px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: left;
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 20px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .header-left h1 {
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.01em;
+  }
+
+  .header-left p {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    font-family: var(--sans);
+  }
+
+  .header-right {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ── LOGIN ── */
+  #login-screen {
+    opacity: 0;
+    animation: fadeUp 0.5s ease 0.15s forwards;
+  }
+
+  .login-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 2px 16px var(--accent-dim);
+  }
+
+  .login-card .lock-emoji {
+    font-size: 32px;
+    display: block;
+    margin-bottom: 16px;
+    opacity: 0.7;
+  }
+
+  .login-card h2 {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .login-card p {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 24px;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+
+  .login-row {
+    display: flex;
+    border: 1px solid var(--border);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .login-row:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .pw-input {
+    flex: 1;
+    background: white;
+    border: none;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 13px 16px;
+    outline: none;
+    letter-spacing: 0.1em;
+  }
+
+  .pw-input.error { background: #fff8f8; }
+
+  .pw-btn {
+    background: var(--accent);
+    border: none;
+    color: white;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 13px 22px;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+
+  .pw-btn:hover { background: var(--accent-light); }
+
+  .login-error {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--error);
+    margin-top: 10px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    letter-spacing: 0.02em;
+  }
+
+  .login-error.visible { opacity: 1; }
+
+  /* ── APP SCREEN ── */
+  #app-screen { display: none; opacity: 0; }
+
+  #app-screen.visible {
+    display: block;
+    animation: fadeUp 0.4s ease forwards;
+  }
+
+  /* ── VOCAB STATUS ── */
+  .vocab-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-dim);
+    letter-spacing: 0.04em;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .vocab-status .indicator {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    flex-shrink: 0;
+  }
+
+  .vocab-status.loaded .indicator {
+    background: var(--success);
+  }
+
+  .vocab-status.loading .indicator {
+    background: var(--accent);
+    animation: pulse 1s infinite;
+  }
+
+  .vocab-status .refresh-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    text-transform: uppercase;
+  }
+
+  .vocab-status .refresh-btn:hover { opacity: 0.6; }
+
+  /* ── PANELS ── */
+  .panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    margin-bottom: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .panel {
+    background: white;
+    transition: background 0.2s;
+  }
+
+  .panel:focus-within {
+    background: #fdfbff;
+  }
+
+  .panel-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 11px 16px 9px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--sans);
+  }
+
+  .panel-label .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #ddd;
+    transition: all 0.3s;
+  }
+
+  .panel-label .dot.active {
+    background: var(--accent);
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 220px;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.75;
+    padding: 16px;
+    resize: vertical;
+    outline: none;
+  }
+
+  textarea::placeholder { color: #bbb; font-style: italic; }
+
+  #output-text { color: var(--text-mid); cursor: default; }
+  #output-text.has-content { color: var(--text); }
+
+  /* ── CONTROLS ── */
+  .controls {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-top: none;
+    margin-bottom: 16px;
+  }
+
+  .btn-translate {
+    flex: 1;
+    background: var(--accent);
+    border: none;
+    color: white;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 14px 24px;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-translate:hover { background: var(--accent-light); }
+  .btn-translate:active { opacity: 0.9; }
+
+  .btn-secondary {
+    background: white;
+    border: none;
+    color: var(--text-dim);
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 14px 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-secondary:hover { color: var(--accent); background: var(--surface); }
+  .btn-secondary.copied { color: var(--success); }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: flex;
+    border: 1px solid var(--border);
+    background: var(--border);
+    gap: 1px;
+  }
+
+  .stat {
+    flex: 1;
+    padding: 12px 16px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .stat-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-family: var(--sans);
+  }
+
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 18px;
+    color: var(--accent);
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    margin-top: 20px;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-dim);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--sans);
+    letter-spacing: 0.03em;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+  }
+
+  .highlight-flash { animation: flashBg 0.4s ease; }
+
+  @keyframes flashBg {
+    0%   { background: var(--accent-dim); }
+    100% { background: white; }
+  }
+
+  /* ── WIZARD DOTS ── */
+  .wdot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all 0.25s ease;
+    flex-shrink: 0;
+  }
+  .wdot.active {
+    width: 22px;
+    border-radius: 4px;
+    background: var(--accent);
+  }
+
+  @media (max-width: 560px) {
+    .panels { grid-template-columns: 1fr; }
+    .header { flex-direction: column; gap: 4px; }
+    .header-left h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="emoji-bg" id="emoji-bg"></div>
+
+<div class="container">
+
+  <div class="header">
+    <div class="header-left">
+      <h1>Traduttore</h1>
+      <p>vocabolario dinamico.</p>
+    </div>
+    <div class="header-right">v1.0</div>
+  </div>
+
+  <!-- WIZARD ONBOARDING -->
+  <div id="wizard-screen">
+    <div class="login-card" style="max-width:520px; margin: 0 auto;">
+
+      <div style="display:flex; align-items:center; gap:6px; justify-content:center; margin-bottom:2rem;">
+        <div class="wdot" id="wd1"></div>
+        <div class="wdot" id="wd2"></div>
+        <div class="wdot" id="wd3"></div>
+        <div class="wdot" id="wd4"></div>
+        <button onclick="showLogin()" style="margin-left:12px;background:white;border:1.5px solid var(--accent);color:var(--accent);font-size:11px;font-family:var(--sans);font-weight:700;cursor:pointer;padding:5px 14px;border-radius:2px;letter-spacing:0.04em;transition:all 0.15s;">ho già la password →</button>
+      </div>
+
+      <div id="wizard-content" style="min-height:260px; display:flex; flex-direction:column; justify-content:space-between;">
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border);">
+        <button id="wbtn-back" onclick="wPrev()" style="font-size:12px; color:var(--text-dim); background:none; border:none; cursor:pointer; font-family:var(--sans); font-weight:500; letter-spacing:0.04em; visibility:hidden;">← Indietro</button>
+        <button id="wbtn-next" onclick="wNext()" class="pw-btn" style="border-radius:2px;">Continua →</button>
+      </div>
+
+    </div>
+  </div>
+
+<!-- LOGIN -->
+  <div id="login-screen" style="display:none;">
+    <div class="login-card" style="max-width:520px; margin: 0 auto;">
+      <span class="lock-emoji">🔐</span>
+      <h2>Hai la password?</h2>
+      <p>Inseriscila qui sotto per accedere al vocabolario.</p>
+      <div class="login-row">
+        <input
+          class="pw-input"
+          id="pw-input"
+          type="password"
+          placeholder="password…"
+          autocomplete="current-password"
+        />
+        <button class="pw-btn" onclick="checkPassword()">Entra →</button>
+      </div>
+      <div class="login-error" id="login-error">❌ Password errata, riprova</div>
+      <p style="margin-top:1.5rem; font-size:12px; color:var(--text-dim); text-align:center;">
+        Non ce l'hai ancora? <button onclick="showWizard()" style="background:none;border:none;color:var(--accent);font-size:12px;font-family:var(--sans);font-weight:600;cursor:pointer;padding:0;">Richiedi accesso</button>
+      </p>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app-screen">
+
+    <div class="vocab-status loading" id="vocab-status">
+      <div class="indicator"></div>
+      <span id="vocab-status-text">Caricamento vocabolario…</span>
+      <button class="refresh-btn" onclick="loadVocabulary()">↻ Aggiorna</button>
+    </div>
+
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-label">
+          Input
+          <div class="dot active"></div>
+        </div>
+        <textarea
+          id="input-text"
+          placeholder="Scrivi o incolla il testo da tradurre…"
+        ></textarea>
+      </div>
+      <div class="panel">
+        <div class="panel-label">
+          Output
+          <div class="dot" id="output-dot"></div>
+        </div>
+        <textarea
+          id="output-text"
+          readonly
+          placeholder="Il testo tradotto apparirà qui…"
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn-translate" onclick="runTranslation()">Traduci</button>
+      <button class="btn-secondary" id="copy-btn" onclick="copyOutput()">Copia</button>
+      <button class="btn-secondary" onclick="clearAll()">Pulisci</button>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat">
+        <span class="stat-label">Termini vocabolario</span>
+        <span class="stat-value" id="stat-vocab">—</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Sostituzioni</span>
+        <span class="stat-value" id="stat-replacements">—</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Caratteri output</span>
+        <span class="stat-value" id="stat-chars">—</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span id="last-update">vocabolario non caricato</span>
+      <span>La Abba 💜</span>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  // ─────────────────────────────────────────
+  const PASSWORD = 'C$um.P2024-A1327';
+  const CONTACT_EMAIL = 'fabbatantuono@digitalrealitylab.it';
+  const VOCAB_WEBHOOK_URL = '/api/vocab';
+  const ESEMPIO_VOCABOLARIO = [
+    { source: 'weekend', target: 'tu' },
+    { source: '#90', target: 'Canzoniere, 90' },
+  ];
+  // ─────────────────────────────────────────
+
+  // ── WIZARD ──
+  const wSteps = [
+    {
+      tag: '1 di 4',
+      title: 'Ciao.',
+      body: '<p style="margin:0 0 0.75em 0;">Se un po\' mi conosci, sai che amo le metafore e i giochi di parole.</p><p style="margin:0 0 0.75em 0;">Spesso le persone che mi vogliono bene mi chiedono: <em style="color:var(--accent);">"parlavi a me?"</em></p><p style="margin:0;">La risposta è quasi sempre no. La maggior parte delle volte parlo a me stessa.</p>'
+    },
+    {
+      tag: '2 di 4',
+      title: 'Su Instagram pubblico frasi in codice.',
+      body: '<p style="margin:0 0 0.75em 0;">Parole che sembrano dire una cosa e ne dicono un\'altra. Giochi. Doppi sensi.</p><p style="margin:0 0 0.75em 0;">E poi spesso ci infilo parentesi che modificano tutta la sintassi. Messaggi che arrivano solo a chi sa dove guardare.</p><p style="margin:0;">Questo strumento esiste per decifrare il mio vocabolario personale.</p>'
+    },
+    {
+      tag: '3 di 4',
+      title: 'Come funziona.',
+      body: '<div style="background:var(--surface);border:1px solid var(--border);padding:12px 16px;margin-bottom:10px;"><p style="margin:0 0 4px;font-size:10px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;">Scrivi</p><p style="margin:0;font-style:italic;font-family:var(--mono);font-size:13px;">"la frase che trovi nella mia storia o nel mio post"</p></div><div style="text-align:center;font-size:16px;color:var(--text-dim);margin:8px 0;">↓</div><div style="background:var(--surface);border:1px solid var(--border);padding:12px 16px;margin-bottom:14px;"><p style="margin:0 0 4px;font-size:10px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;">Ottieni</p><p style="margin:0;font-family:var(--mono);font-size:13px;color:var(--accent);">la traduzione</p></div><p style="font-size:12px;color:var(--text-dim);font-style:italic;line-height:1.6;">Non è detto che questo ti faccia capire tutto — dovrai comunque sapere dove guardare. Ma sarà un bell\'aiuto.</p>'
+    },
+    {
+      tag: '4 di 4',
+      title: 'Richiedimi l\'accesso.',
+      body: '<p style="font-size:13px;color:var(--text-mid);line-height:1.75;margin-bottom:1.25rem;">La password viene data solo ai pianeti. Le stelle non entrano nel sistema. Scrivimi chi sei e ti faccio sapere.</p><div style="display:flex;flex-direction:column;gap:10px;"><div><label style="font-size:10px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:4px;">Il tuo nome</label><input type="text" id="req-name" placeholder="come ti chiami?" style="width:100%;font-size:13px;padding:10px 14px;border:1px solid var(--border);background:white;color:var(--text);outline:none;font-family:var(--mono);"></div><div><label style="font-size:10px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:4px;">La tua email</label><input type="email" id="req-email" placeholder="dove ti rispondo?" style="width:100%;font-size:13px;padding:10px 14px;border:1px solid var(--border);background:white;color:var(--text);outline:none;font-family:var(--mono);"></div><div><label style="font-size:10px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:4px;">Raccontami</label><textarea id="req-desc" placeholder="chi sei, e perché ti interessa il vocabolario…" rows="3" style="width:100%;font-size:13px;padding:10px 14px;border:1px solid var(--border);background:white;color:var(--text);outline:none;font-family:var(--mono);resize:vertical;"></textarea></div></div>'
+    }
+  ];
+
+  let wCurrent = 0;
+
+  function wRender() {
+    const s = wSteps[wCurrent];
+    const isLast = wCurrent === wSteps.length - 1;
+    document.getElementById('wizard-content').innerHTML = '<div><p style="font-size:10px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.75rem;">' + s.tag + '</p><h2 style="font-family:var(--serif);font-size:22px;font-weight:600;margin-bottom:1.25rem;line-height:1.3;color:var(--text);">' + s.title + '</h2><div style="font-size:14px;line-height:1.8;color:var(--text-mid);">' + s.body + '</div></div>';
+    document.getElementById('wbtn-next').textContent = isLast ? 'Invia richiesta' : 'Continua →';
+    document.getElementById('wbtn-back').style.visibility = wCurrent === 0 ? 'hidden' : 'visible';
+    for (let i = 0; i < 4; i++) {
+      const dot = document.getElementById('wd' + (i+1));
+      if (dot) {
+        dot.classList.toggle('active', i === wCurrent);
+      }
+    }
+  }
+
+  function wNext() {
+    if (wCurrent < wSteps.length - 1) {
+      wCurrent++;
+      wRender();
+    } else {
+      wSend();
+    }
+  }
+
+  function wPrev() {
+    if (wCurrent > 0) { wCurrent--; wRender(); }
+  }
+
+  function wSend() {
+    const name = document.getElementById('req-name')?.value.trim();
+    const email = document.getElementById('req-email')?.value.trim();
+    const desc = document.getElementById('req-desc')?.value.trim();
+    if (!name || !email) {
+      alert('Inserisci almeno nome e email per continuare.');
+      return;
+    }
+    const subject = encodeURIComponent('Richiesta accesso vocabolario — ' + name);
+    const body = encodeURIComponent('Ciao La Abba,\n\nMi chiamo ' + name + ' e vorrei accedere al tuo vocabolario.\n\nLa mia email: ' + email + '\n\n' + (desc ? 'Chi sono e perché mi interessa:\n' + desc : '') + '\n\nGrazie!');
+    window.location.href = 'mailto:' + CONTACT_EMAIL + '?subject=' + subject + '&body=' + body;
+  }
+
+  function showWizard() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('wizard-screen').style.display = 'block';
+    wCurrent = 0;
+    wRender();
+  }
+
+  function showLogin() {
+    document.getElementById('wizard-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'block';
+  }
+
+  // Avvio wizard al caricamento
+  window.addEventListener('DOMContentLoaded', () => { wRender(); });
+
+  // ── EMOJI BACKGROUND ──
+  const EMOJIS = [
+    '🪐','🌍','🌎','🌏','🌙','🌛','🌜','🌝','🌚','🌞','⭐','🌟',
+    '✨','💫','🌠','☄️','🚀','🛸','🛰️','🔭','🌌','🪨','⚡','🌤️',
+    '🍕','🍣','🍜','🍔','🥑','🍩','🧁','🍦','🫐','🍇','🍓','🌮',
+    '🍱','🍛','🥘','🫕','🍲','🥗','🍤','🧆','🥙','🍋','🫙','🍾'
+  ];
+
+  function spawnEmojis() {
+    const container = document.getElementById('emoji-bg');
+    for (let i = 0; i < 42; i++) {
+      const el = document.createElement('span');
+      el.className = 'emoji-float';
+      el.textContent = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.top = Math.random() * 100 + 'vh';
+      el.style.fontSize = (16 + Math.random() * 22) + 'px';
+      el.style.animationDuration = (7 + Math.random() * 10) + 's';
+      el.style.animationDelay = (-Math.random() * 12) + 's';
+      container.appendChild(el);
+    }
+  }
+  spawnEmojis();
+
+  let vocabulary = [];
+  let isAuthenticated = false;
+
+  function checkPassword() {
+    const input = document.getElementById('pw-input');
+    const errorEl = document.getElementById('login-error');
+    if (input.value === PASSWORD) {
+      document.getElementById('login-screen').style.display = 'none';
+      const app = document.getElementById('app-screen');
+      app.classList.add('visible');
+      isAuthenticated = true;
+      loadVocabulary();
+    } else {
+      input.classList.add('error');
+      errorEl.classList.add('visible');
+      input.value = '';
+      setTimeout(() => input.classList.remove('error'), 600);
+    }
+  }
+
+  document.getElementById('pw-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkPassword();
+    document.getElementById('login-error').classList.remove('visible');
+    document.getElementById('pw-input').classList.remove('error');
+  });
+
+  async function loadVocabulary() {
+    const statusEl = document.getElementById('vocab-status');
+    const statusText = document.getElementById('vocab-status-text');
+    const statVocab = document.getElementById('stat-vocab');
+    const lastUpdate = document.getElementById('last-update');
+
+    statusEl.className = 'vocab-status loading';
+    statusText.textContent = 'Caricamento vocabolario…';
+
+    try {
+      // CORS proxy per aggirare le restrizioni di Google Apps Script
+      const proxyUrl = '/api/vocab';
+      const res = await fetch(proxyUrl);
+      const data = await res.json();
+      vocabulary = data;
+      statusEl.className = 'vocab-status loaded';
+      statusText.textContent = `${vocabulary.length} termini caricati`;
+      statVocab.textContent = vocabulary.length;
+      lastUpdate.textContent = 'aggiornato: ' + now();
+    } catch (err) {
+      vocabulary = ESEMPIO_VOCABOLARIO;
+      statusEl.className = 'vocab-status loaded';
+      statusText.textContent = `${vocabulary.length} termini (esempio locale)`;
+      statVocab.textContent = vocabulary.length;
+      lastUpdate.textContent = 'aggiornato: ' + now();
+      console.warn('Fallback al vocabolario esempio', err);
+    }
+  }
+
+  function runTranslation() {
+    const input = document.getElementById('input-text').value;
+    if (!input.trim()) return;
+
+    let output = input;
+    let count = 0;
+
+    const sorted = [...vocabulary].sort((a, b) => b.source.length - a.source.length);
+    sorted.forEach(({ source, target }) => {
+      if (!source) return;
+      const escaped = source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escaped, 'g');
+      const matches = (output.match(regex) || []).length;
+      if (matches > 0) {
+        output = output.replace(regex, target);
+        count += matches;
+      }
+    });
+
+    const outputEl = document.getElementById('output-text');
+    outputEl.value = output;
+    outputEl.classList.add('has-content');
+    outputEl.classList.add('highlight-flash');
+    setTimeout(() => outputEl.classList.remove('highlight-flash'), 500);
+    document.getElementById('output-dot').classList.add('active');
+    document.getElementById('stat-replacements').textContent = count;
+    document.getElementById('stat-chars').textContent = output.length;
+  }
+
+  function copyOutput() {
+    const output = document.getElementById('output-text').value;
+    if (!output) return;
+    navigator.clipboard.writeText(output).then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = 'Copiato ✓';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copia';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  function clearAll() {
+    document.getElementById('input-text').value = '';
+    document.getElementById('output-text').value = '';
+    document.getElementById('output-text').classList.remove('has-content');
+    document.getElementById('output-dot').classList.remove('active');
+    document.getElementById('stat-replacements').textContent = '—';
+    document.getElementById('stat-chars').textContent = '—';
+  }
+
+  function now() {
+    return new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !isAuthenticated) checkPassword();
+  });
+</script>
+</body>
+</html>

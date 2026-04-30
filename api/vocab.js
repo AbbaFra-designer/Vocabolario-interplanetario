@@ -8,13 +8,16 @@ export default async function handler(req, res) {
     const lines = csv.split('\n').slice(1); // salta intestazione
     const vocabulary = lines
       .map(line => {
-        const parts = line.split(',');
-        return {
-          source: parts[0]?.replace(/^"|"$/g, '').trim(),
-          target: parts[1]?.replace(/^"|"$/g, '').trim()
-        };
+        // Supporta sia tab che virgola come separatore
+        // Usa indexOf per non spezzare i valori che contengono virgole (es. "Canzoniere, 90")
+        const sep = line.includes('\t') ? '\t' : ',';
+        const firstSep = line.indexOf(sep);
+        if (firstSep === -1) return null;
+        const source = line.slice(0, firstSep).replace(/^"|"$/g, '').trim();
+        const target = line.slice(firstSep + 1).replace(/^"|"$/g, '').trim().replace(/\r$/, '');
+        return { source, target };
       })
-      .filter(item => item.source && item.target);
+      .filter(item => item && item.source && item.target);
 
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.status(200).json(vocabulary);
